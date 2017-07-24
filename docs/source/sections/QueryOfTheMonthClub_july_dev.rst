@@ -137,7 +137,8 @@ table of pathway related genes, and get the probe types.
   ARRAY<STRUCT<RefGene_Group STRING, RefGene_Accession STRING, RefGene_Name STRING>> at [18:34]
 
 
-What happened?  It's that darned RECORD, which in STANDARD SQL is now an array. We have previously
+What happened?  It's that darned RECORD, which in our error, actually looks to be an
+ARRAY of STRUCTS! We have previously
 used arrays in our queries in past months where we took a list of values and created
 an array to be passed to a javascript function. The result of the function gave us
 back an array, and we had to UNNEST it, to get back one row per entry. It's similar
@@ -152,9 +153,44 @@ relative position of the probe to the gene.
 
 To (finally!) address the problem of RECORDS, we need to check the BigQuery
 `docs <https://cloud.google.com/bigquery/docs/reference/standard-sql/migrating-from-legacy-sql>_`
+So there, we see that the RECORD in Legacy SQL becomes a STRUCT in Standard SQL. In order
+to flatten the table, in Legacy SQL we would use FLATTEN, but now, in Standard SQL we are
+going to use UNNEST.
+
+So what's the difference between an ARRAY and a STRUCT.
+
+Well from the docs: an ARRAY is "an ordered list of zero or more elements of non-ARRAY values."
+and a STRUCT is "Container of ordered fields each with a type..". Hmmm, sounds pretty similar,
+the difference is that a STRUCT can be a collection of different data types (STRINGS and INTs for
+example), while ARRAYs have to be a single data type.
+
+To get around that, we are going to FLATTEN the table using UNNEST.
+
+.. code-block:: sql
+
+  SELECT
+    RefGene_Name,
+    RefGene_Group
+  FROM
+    `isb-cgc.platform_reference.methylation_annotation`,
+    UNNEST(UCSC)
+  LIMIT
+    1000
+
+::
+
+  Row	RefGene_Name	RefGene_Group
+  1	  null	        null
+  2	  null	        null
+  3	  IQCE	        Body
+  4	  IQCE	        Body
+  5	  CRYGN	        3'UTR
+  6	  IQCE	        Body
+  7	  IQCE	        Body
+  8	  ELFN1	        5'UTR
 
 
-
+That's more like it!
 
 
 
