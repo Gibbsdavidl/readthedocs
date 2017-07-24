@@ -59,7 +59,34 @@ we see that the table has 485,577 rows and has the following description:
   available to the public with permission from Illumina.
 
 
+Sounds good! A couple important columns are going to be the IlmnID, which
+is the probe ID (example: cg10232580), and the UCSC RECORD, where we'll find
+the gene symbol, RefGene accession ID, and the portion of the gene the probe is
+closest to (nothing is certain though).
 
+Let's start with a easy one:
+
+.. code-block:: sql
+
+  SELECT
+    Infinium_Design_Type,
+    COUNT(Infinium_Design_Type)
+  FROM
+    `isb-cgc.platform_reference.methylation_annotation`
+  GROUP BY
+    Infinium_Design_Type
+
+::
+
+  Row	Infinium_Design_Type	f0_
+  1	  I	                    135501
+  2	  II	                  350076
+
+
+Why does that matter? Well, the array was actually a blend of two different
+technologies. This `paper <https://www.ncbi.nlm.nih.gov/pubmed/22126295>_`
+shows that the performance of the two probes is very different, and that type II
+probes appear to be less useful than the type I probes.
 
 
 
