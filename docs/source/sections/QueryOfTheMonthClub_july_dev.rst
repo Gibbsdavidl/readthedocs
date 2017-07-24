@@ -86,7 +86,78 @@ Let's start with a easy one:
 Why does that matter? Well, the array was actually a blend of two different
 technologies. This `paper <https://www.ncbi.nlm.nih.gov/pubmed/22126295>_`
 shows that the performance of the two probes is very different, and that type II
-probes appear to be less useful than the type I probes.
+probes appear to be less useful than the type I probes. Unfortunate, considering
+how many more type II probe exist compared to type I.
+
+Now, let's suppose we are interested in a particular pathway, and we'd like to know
+the distribution of probe types across the pathway genes. Using our previous
+'Query of the Month' data set (isb-cgc:QotM.WikiPathways_20170425_Annotated),
+we can get a list of functionally related genes.
+
+.. code-block:: sql
+
+  SELECT
+    DISTINCT(Symbol)
+  FROM
+    `isb-cgc.QotM.WikiPathways_20170425_Annotated`
+  WHERE
+    pathway = 'Oxidative Damage'
+
+and we get 40 genes. So now we're going to join the annotation table, to our
+table of pathway related genes, and get the probe types.
+
+.. code-block:: sql
+
+  WITH
+  pathway AS (
+  SELECT
+    DISTINCT(Symbol) as gene_symbol
+  FROM
+    `isb-cgc.QotM.WikiPathways_20170425_Annotated`
+  WHERE
+    pathway = 'Oxidative Damage'
+    )
+  SELECT
+      Infinium_Design_Type,
+      COUNT(Infinium_Design_Type)
+  FROM
+      `isb-cgc.platform_reference.methylation_annotation` as m
+  JOIN
+      pathway
+  ON
+      pathway.gene_symbol = m.UCSC.RefGene_Name
+  GROUP BY
+    Infinium_Design_Type
+
+
+::
+
+  Query Failed
+  Error: Cannot access field RefGene_Name on a value with type
+  ARRAY<STRUCT<RefGene_Group STRING, RefGene_Accession STRING, RefGene_Name STRING>> at [18:34]
+
+
+What happened?  It's that darned RECORD, which in STANDARD SQL is now an array. We have previously
+used arrays in our queries in past months where we took a list of values and created
+an array to be passed to a javascript function. The result of the function gave us
+back an array, and we had to UNNEST it, to get back one row per entry. It's similar
+in this instance. Some probes are mapped to multiple RefGene_Accession IDs. For example,
+cg10241718 maps to NM_033302, NM_033303, NM_033304, and NM_000680. Interestingly, you
+see this same set as part of the HG-U133A probe annotations (Thanks, genecard-geneannot webservice).
+These are representing four different transcripts of the same gene ADRA1A, the methylation
+probe has the same relationship to three of the isoforms (body), but for one isoform,
+NM_000680, the probe is 3'-UTR, which could change its effect. In light of that, we might want
+to group by gene symbol (mostly the same) and the refgene_group, which tells us the
+relative position of the probe to the gene.
+
+To (finally!) address the problem of RECORDS, we need to check the BigQuery
+`docs <https://cloud.google.com/bigquery/docs/reference/standard-sql/migrating-from-legacy-sql>_`
+
+
+
+
+
+
 
 
 
