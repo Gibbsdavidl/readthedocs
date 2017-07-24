@@ -317,10 +317,13 @@ But also we can incorporate long lists of samples or genes into a query.
 From Lists to Matrices
 ======================
 
-Transform gexp_affected_genes_df into a gexp-by-samples feature matrix
+The 'spread' function can make a long table, wide.
 
 .. code-block:: r
 
-	gexp_fm = tidyr::spread(gexp_affected_genes,HGNC_gene_symbol,normalized_count)
+	spread(corrs, gene1, corr)
 
-	gexp_fm[1:5,1:5]
+	# where corrs is a data.frame with three columns (from above) gene1, gene2, and corr.
+	# and we let gene1 be the column entries,
+	# gene2 will get the first column, 
+	# and correlation values will fill in the matrix.
